@@ -8,7 +8,7 @@ Prototipo funcional desarrollado para la evaluación del **Taller 2** en el curs
 
 * **Felipe** ([@Felipe-UNALM](https://github.com/Felipe-UNALM))  
     *Rol:* Encargado del Web Scraping.
-* **Sergio** ([@sergiomendoza290803-wq](https://github.com/sergiomendoza290803-wq))
+* **Sergio** ([@sergiomendoza290803-wq](https://github.com/sergiomendoza290803-wq))  
     *Rol:* Encargado de procesamiento de texto, Regex y diseño del modelo heurístico IRD.
 * **Isaac** ([@IsaacAlvarezCaja2026](https://github.com/IsaacAlvarezCaja2026))  
     *Rol:* Encargado de arquitectura de datos (SQLite), integración y visualización (Streamlit).
