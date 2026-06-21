@@ -31,14 +31,14 @@ Prototipo funcional desarrollado para la evaluación del **Taller 2** en el curs
 
 ```text
 📦 PROYECTO_FINAL_LP2_VARGAS
- ┣ 📜 app.py                  # Código principal del Dashboard interactivo en Streamlit
- ┣ 📜 database.py              # Script de arquitectura de datos unificada e inyección a SQLite
+ ┣ 📜 app.py                    # Código principal del Dashboard interactivo en Streamlit
+ ┣ 📜 database.py               # Script de arquitectura de datos unificada e inyección a SQLite
  ┣ 📜 monitor_desinformacion.db # Base de datos relacional SQLite (Persistencia estructurada)
- ┣ 📜 limpieza.py             # Funciones de limpieza de cadenas de texto
- ┣ 📜 regex_patterns.py        # Diccionario de patrones y expresiones regulares
- ┣ 📜 robots_checker.py        # Validador de permisos de acceso web (robots.txt)
- ┣ 📜 score_ird.py             # Algoritmo matemático del Índice de Riesgo de Desinformación
- ┣ 📜 scraper_fuente1.py       # Extractor automatizado para MedlinePlus
- ┣ 📜 scraper_fuente2.py       # Extractor automatizado para Menéame
- ┗ 📜 requerimientos.txt       # Listado estandarizado de dependencias del proyecto
+ ┣ 📜 limpieza.py               # Funciones de limpieza de cadenas de texto
+ ┣ 📜 regex_patterns.py         # Diccionario de patrones y expresiones regulares
+ ┣ 📜 robots_checker.py         # Validador de permisos de acceso web (robots.txt)
+ ┣ 📜 score_ird.py              # Algoritmo matemático del Índice de Riesgo de Desinformación
+ ┣ 📜 scraper_fuente1.py        # Extractor automatizado para MedlinePlus
+ ┣ 📜 scraper_fuente2.py        # Extractor automatizado para Menéame
+ ┗ 📜 requerimientos.txt        # Listado estandarizado de dependencias del proyecto
 ```
