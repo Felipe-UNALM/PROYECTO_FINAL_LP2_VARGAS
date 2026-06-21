@@ -1,0 +1,30 @@
+[
+    {
+        "titulo": "El alarmante peligro oculto en los alimentos cotidianos que la ciencia ignora",
+        "url": "https://example.com/noticia-falsa-antivacunas",
+        "autor": "Usuario Menéame Anónimo",
+        "fecha": "Reciente / Post Social",
+        "texto_principal": "Un estudio alternativo afirma que ciertos compuestos químicos permitidos causan estragos masivos en la salud pública mundial, a pesar del silencio institucional.",
+        "enlaces_externos": 1,
+        "referencias": [
+            "https://example.com/noticia-falsa-antivacunas"
+        ],
+        "metricas_sociales": {
+            "comentarios": "87"
+        }
+    },
+    {
+        "titulo": "Descubren un nuevo tratamiento eficaz contra la regeneración celular",
+        "url": "https://example.com/noticia-verdadera-ciencia",
+        "autor": "Usuario Menéame Anónimo",
+        "fecha": "Reciente / Post Social",
+        "texto_principal": "Científicos de la Universidad de Harvard logran un avance histórico al restaurar tejidos mediante manipulación genética controlada en laboratorios oficiales.",
+        "enlaces_externos": 1,
+        "referencias": [
+            "https://example.com/noticia-verdadera-ciencia"
+        ],
+        "metricas_sociales": {
+            "comentarios": "12"
+        }
+    }
+]
