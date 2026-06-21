@@ -1,70 +1,103 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+import plotly.express as px
 
-# Configuración de la página web
-st.set_page_config(page_title="Monitoreo de Desinformación", layout="wide", page_icon="📊")
+# Configuración profesional de la página web
+st.set_page_config(page_title="Sistema de Monitoreo de Desinformación", layout="wide")
 
-# Título principal del Dashboard
 st.title("📊 Sistema de Monitoreo de Indicadores de Desinformación Científica")
 st.markdown("### Prototipo de detección de señales de riesgo en artículos de salud")
-st.write("Este sistema analiza textos web mediante heurísticas lógicas para calcular el Índice de Riesgo de Desinformación (IRD).")
+st.markdown("---")
 
-st.divider()
+# Conexión directa a la base de datos unificada
+conn = sqlite3.connect("monitor_desinformacion.db")
+df = pd.read_sql_query("SELECT * FROM articulos", conn)
+conn.close()
 
-# Función para conectar a la DB y jalar los datos
-def cargar_datos_db():
-    conn = sqlite3.connect("monitor_desinformacion.db")
-    # Traemos todos los artículos guardados en la tabla
-    df = pd.read_sql_query("SELECT * FROM articulos", conn)
-    conn.close()
-    return df
+total_articulos = len(df)
+alertas_criticas = len(df[df['clasificacion'] == "ALTO RIESGO"])
+promedio_ird = df['puntaje_ird'].mean() if total_articulos > 0 else 0.0
 
-df_articulos = cargar_datos_db()
+# 1. COMPONENTE: Tarjetas de KPIs (Indicadores Clave)
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric(label="Total Artículos Analizados", value=total_articulos)
+with col2:
+    st.metric(label="Índice IRD Promedio Global", value=f"{promedio_ird:.1f} pts")
+with col3:
+    st.metric(label="Artículos de Alto Riesgo Detectados", value=alertas_criticas, delta="¡Alerta!" if alertas_criticas > 0 else "Estable", delta_color="inverse")
 
-if not df_articulos.empty:
-    # --- SECCIÓN 1: MÉTRICAS GLOBALES ---
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric(label="Total Artículos Analizados", value=len(df_articulos))
-        
-    with col2:
-        promedio_ird = df_articulos['puntaje_ird'].mean()
-        st.metric(label="Índice IRD Promedio Global", value=f"{promedio_ird:.1f} pts")
-        
-    with col3:
-        # Consideramos alto riesgo si el score es mayor o igual a 4
-        alto_riesgo = len(df_articulos[df_articulos['puntaje_ird'] >= 4])
-        st.metric(label="Artículos de Alto Riesgo Detectados", value=alto_riesgo, delta="Alerta", delta_color="inverse")
+st.markdown("---")
 
-    st.divider()
+# Distribución de pantallas para los dos gráficos solicitados por Sergio
+col_graf1, col_graf2 = st.columns([2, 1])
 
-    # --- SECCIÓN 2: GRÁFICOS INTERACTIVOS ---
-    st.subheader("📈 Distribución del Nivel de Riesgo (IRD)")
-    st.write("A mayor puntaje en el gráfico, el artículo presenta más indicadores sospechosos (falta de autor, lenguaje alarmista, etc.).")
-    
-    # Gráfico de barras interactivo usando Streamlit
-    st.bar_chart(data=df_articulos, x='titulo', y='puntaje_ird', color='#ff4b4b')
-
-    st.divider()
-
-    # --- SECCIÓN 3: TABLA DE DATOS Y FILTROS ---
-    st.subheader("🔍 Explorador de Artículos Analizados")
-    
-    # Filtro por tipo de fuente
-    tipo_filtro = st.selectbox("Filtrar por tipo de fuente:", ["Todos", "Oficial", "Blog"])
-    
-    if tipo_filtro != "Todos":
-        df_filtrado = df_articulos[df_articulos['tipo_fuente'] == tipo_filtro]
+with col_graf1:
+    st.markdown("#### 📈 Distribución del Nivel de Riesgo (IRD)")
+    if total_articulos > 0:
+        # IMPLEMENTACIÓN: Rojo para alto riesgo y Verde para confiable
+        fig_bar = px.bar(
+            df, 
+            x='titulo', 
+            y='puntaje_ird',
+            color='clasificacion',
+            color_discrete_map={'ALTO RIESGO': '#FF4B4B', 'CONFIABLE': '#00B074'},
+            labels={'titulo': 'Artículo', 'puntaje_ird': 'Puntaje IRD', 'clasificacion': 'Evaluación'},
+            height=400
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
     else:
-        df_filtrado = df_articulos
+        st.info("Sin datos para graficar.")
 
-    # Mostrar la tabla limpia en el dashboard
-    st.dataframe(
-        df_filtrado[['titulo', 'autor', 'fecha', 'tipo_fuente', 'puntaje_ird', 'url']], 
-        use_container_width=True
+with col_graf2:
+    st.markdown("#### 🍰 Porcentaje de Información Confiable")
+    if total_articulos > 0:
+        # COMPONENTE NUEVO: Gráfico de Torta/Pastel exigido en la guía
+        fig_pie = px.pie(
+            df, 
+            names='clasificacion',
+            color='clasificacion',
+            color_discrete_map={'ALTO RIESGO': '#FF4B4B', 'CONFIABLE': '#00B074'},
+            hole=0.2,
+            height=400
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+    else:
+        st.info("Sin datos para gráfico circular.")
+
+st.markdown("---")
+
+# 2. COMPONENTE: Tabla de Control con Semáforo
+st.markdown("#### 🔍 Explorador de Artículos Analizados (Tabla de Control)")
+
+opciones_fuente = ["Todos"] + list(df['tipo_fuente'].unique()) if total_articulos > 0 else ["Todos"]
+filtro_fuente = st.selectbox("Filtrar por tipo de fuente:", opciones_fuente)
+
+if total_articulos > 0:
+    if filtro_fuente != "Todos":
+        df_filtrado = df[df['tipo_fuente'] == filtro_fuente]
+    else:
+        df_filtrado = df.copy()
+
+    # Columnas organizadas idéntico al libreto de exposición
+    df_mostrar = df_filtrado[['titulo', 'autor', 'fecha', 'tipo_fuente', 'frases_alarmistas', 'referencias_cientificas', 'puntaje_ird', 'clasificacion', 'url']]
+    
+    # IMPLEMENTACIÓN: Efecto Semáforo condicional avanzado
+    def estilo_celda_alerta(val):
+        color = '#FFD2D2' if val == "ALTO RIESGO" else '#D2F8D2'
+        text_color = '#990000' if val == "ALTO RIESGO" else '#006600'
+        return f'background-color: {color}; color: {text_color}; font-weight: bold;'
+
+    # Aplica gradiente naranja al puntaje IRD e iluminación roja/verde a la clasificación
+    styled_df = df_mostrar.style.background_gradient(
+        subset=['puntaje_ird'], 
+        cmap='Oranges'
+    ).map(
+        estilo_celda_alerta, 
+        subset=['clasificacion']
     )
-
+    
+    st.dataframe(styled_df, use_container_width=True)
 else:
-    st.error("No se encontraron datos en la base de datos. Asegúrate de ejecutar 'database.py' primero.")
+    st.warning("La base de datos relacional está vacía.")
