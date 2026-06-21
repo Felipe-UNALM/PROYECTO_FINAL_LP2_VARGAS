@@ -14,7 +14,7 @@ st.divider()
 
 # Función para conectar a la DB y jalar los datos
 def cargar_datos_db():
-    conn = sqlite3.connect("desinformacion.db")
+    conn = sqlite3.connect("monitor_desinformacion.db")
     # Traemos todos los artículos guardados en la tabla
     df = pd.read_sql_query("SELECT * FROM articulos", conn)
     conn.close()

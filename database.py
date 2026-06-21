@@ -1,11 +1,14 @@
 import sqlite3
-import json
+import pandas as pd
 import os
+import subprocess
 
-DB_NAME = "desinformacion.db"
+# Nombre exacto del flujo oficial acordado por el grupo
+DB_NAME = "monitor_desinformacion.db"
+CSV_ANALISIS = "resultados_analisis.csv"
 
 def inicializar_db():
-    """Crea la base de datos y la tabla si no existen."""
+    """Crea la base de datos relacional y la tabla estructurada limpia."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute('''
@@ -24,63 +27,64 @@ def inicializar_db():
     ''')
     conn.commit()
     conn.close()
-    print("¡Base de datos inicializada correctamente!")
+    print("¡Base de datos SQLite inicializada de forma limpia!")
 
-def cargar_datos_desde_json(archivo_json, tipo_fuente):
-    """Lee el archivo JSON de Felipe e inserta los datos reales en la DB."""
-    if not os.path.exists(archivo_json):
-        print(f"Aviso: No se encontró el archivo {archivo_json}")
+def integrar_datos_desde_csv():
+    """Toma el CSV generado por Sergio y lo mete a la DB (Paso 3 del flujo)."""
+    if not os.path.exists(CSV_ANALISIS):
+        print(f"❌ Error Crítico: No se encontró el archivo '{CSV_ANALISIS}'.")
         return
 
-    # Leer el archivo JSON estructurado de Felipe
-    with open(archivo_json, 'r', encoding='utf-8') as f:
-        articulos_recopilados = json.load(f)
+    print(f"📥 Leyendo '{CSV_ANALISIS}' generado por Sergio...")
+    df_analizado = pd.read_csv(CSV_ANALISIS)
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    registros_cargados = 0
+    registros_insertados = 0
 
-    for item in articulos_recopilados:
-        titulo = item.get('titulo', 'Sin título')
-        autor = item.get('autor', 'Anónimo')
-        fecha = item.get('fecha', 'Reciente')
-        url = item.get('url', '')
-        texto = item.get('texto_principal', '')
+    for _, row in df_analizado.iterrows():
+        url = str(row['url'])
         
-        # Calculamos cuántas referencias extrajo Felipe en su lista
-        referencias_conteo = len(item.get('referencias', []))
-
-        # --- LÓGICA TEMPORAL (Mientras Sergio termina su código) ---
-        # Analizamos palabras clave básicas para simular el riesgo en el dashboard
-        contenido_completo = (titulo + texto).lower()
-        if "peligro" in contenido_completo or "oculto" in contenido_completo or "falsa" in contenido_completo:
-            puntaje_ird = 8
-            conspiranoico_detectado = 1
-        elif tipo_fuente == "Oficial":
-            puntaje_ird = -3
-            conspiranoico_detectado = 0
+        # Clasificación automática según el dominio de la URL de origen
+        if "medlineplus.gov" in url.lower():
+            tipo_fuente = "Oficial"
         else:
-            puntaje_ird = 3
-            conspiranoico_detectado = 0
-        # -----------------------------------------------------------
+            tipo_fuente = "Blog"
+
+        # Mapeamos los datos calculados por las expresiones regulares de Sergio
+        titulo = row['titulo']
+        autor = row['autor']
+        fecha = row['fecha']
+        texto_principal = row['texto_principal']
+        puntaje_ird = int(row['score_ird'])
+        
+        # Consideramos riesgo crítico si tiene conspiración activa o puntaje alto (>= 4)
+        conspiranoico_detectado = 1 if row['tiene_conspiracion'] == 1 or puntaje_ird >= 4 else 0
+        referencias_conteo = 0 if row['sin_referencias'] == 1 else 1
 
         try:
             cursor.execute('''
                 INSERT INTO articulos (titulo, autor, fecha, url, texto_principal, tipo_fuente, puntaje_ird, conspiranoico_detectado, referencias_conteo)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (titulo, autor, fecha, url, texto, tipo_fuente, puntaje_ird, conspiranoico_detectado, referencias_conteo))
-            registros_cargados += 1
+            ''', (titulo, autor, fecha, url, texto_principal, tipo_fuente, puntaje_ird, conspiranoico_detectado, referencias_conteo))
+            registros_insertados += 1
         except sqlite3.IntegrityError:
-            # Si la URL ya existe en la DB, no la duplica
+            # Evita duplicar registros si corren el script varias veces en la misma DB
             pass
 
     conn.commit()
     conn.close()
-    print(f"¡Se han cargado {registros_cargados} artículos nuevos desde {archivo_json}!")
+    print(f"✅ ¡Éxito! Se han cargado {registros_insertados} artículos analizados en '{DB_NAME}'.")
 
 if __name__ == "__main__":
+    # PASO 2 DEL FLUJO: Forzamos la ejecución automática del script de Sergio para generar el CSV fresco
+    print("🚀 Ejecutando el analizador de Sergio (score_ird.py)...")
+    try:
+        subprocess.run(["python", "score_ird.py"], check=True)
+        print("✨ CSV 'resultados_analisis.csv' generado con éxito por el módulo de Sergio.")
+    except Exception as e:
+        print("⚠️ Nota: Verifica que score_ird.py corra sin problemas de dependencias.")
+
+    # PASO 3 DEL FLUJO: Inicializamos tu DB e insertamos la data extraída del CSV de Sergio
     inicializar_db()
-    # Procesamos la Fuente 1 (MedlinePlus -> Oficial)
-    cargar_datos_desde_json("datos_raw.json", "Oficial")
-    # Procesamos la Fuente 2 (Menéame -> Blog/Foro)
-    cargar_datos_desde_json("datos_raw_meneame.json", "Blog")
+    integrar_datos_desde_csv()
