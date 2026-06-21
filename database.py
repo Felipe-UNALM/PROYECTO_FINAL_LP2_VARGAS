@@ -1,16 +1,13 @@
 import sqlite3
-import pandas as pd
+import json
 import os
 
 DB_NAME = "desinformacion.db"
-CSV_NAME = "resultados_simulados.csv"
 
 def inicializar_db():
     """Crea la base de datos y la tabla si no existen."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
-    # Creamos la tabla con las columnas exactas de nuestro CSV
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS articulos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,28 +24,63 @@ def inicializar_db():
     ''')
     conn.commit()
     conn.close()
-    print("¡Base de datos y tabla 'articulos' inicializadas con éxito!")
+    print("¡Base de datos inicializada correctamente!")
 
-def cargar_datos_desde_csv():
-    """Lee el CSV e inserta los datos en SQLite evitando duplicados por URL."""
-    if not os.path.exists(CSV_NAME):
-        print(f"Error: No se encontró el archivo {CSV_NAME}")
+def cargar_datos_desde_json(archivo_json, tipo_fuente):
+    """Lee el archivo JSON de Felipe e inserta los datos reales en la DB."""
+    if not os.path.exists(archivo_json):
+        print(f"Aviso: No se encontró el archivo {archivo_json}")
         return
 
-    # Leemos el CSV usando la librería Pandas
-    df = pd.read_csv(CSV_NAME)
-    
+    # Leer el archivo JSON estructurado de Felipe
+    with open(archivo_json, 'r', encoding='utf-8') as f:
+        articulos_recopilados = json.load(f)
+
     conn = sqlite3.connect(DB_NAME)
-    
-    # Cargamos los datos. if_exists='append' significa que agrega los datos nuevos
-    try:
-        df.to_sql('articulos', conn, if_exists='append', index=False)
-        print(f"¡Se han cargado {len(df)} artículos correctamente a la base de datos!")
-    except sqlite3.IntegrityError:
-        print("Nota: Algunos artículos no se duplicaron porque sus URLs ya existían en la DB.")
-    
+    cursor = conn.cursor()
+    registros_cargados = 0
+
+    for item in articulos_recopilados:
+        titulo = item.get('titulo', 'Sin título')
+        autor = item.get('autor', 'Anónimo')
+        fecha = item.get('fecha', 'Reciente')
+        url = item.get('url', '')
+        texto = item.get('texto_principal', '')
+        
+        # Calculamos cuántas referencias extrajo Felipe en su lista
+        referencias_conteo = len(item.get('referencias', []))
+
+        # --- LÓGICA TEMPORAL (Mientras Sergio termina su código) ---
+        # Analizamos palabras clave básicas para simular el riesgo en el dashboard
+        contenido_completo = (titulo + texto).lower()
+        if "peligro" in contenido_completo or "oculto" in contenido_completo or "falsa" in contenido_completo:
+            puntaje_ird = 8
+            conspiranoico_detectado = 1
+        elif tipo_fuente == "Oficial":
+            puntaje_ird = -3
+            conspiranoico_detectado = 0
+        else:
+            puntaje_ird = 3
+            conspiranoico_detectado = 0
+        # -----------------------------------------------------------
+
+        try:
+            cursor.execute('''
+                INSERT INTO articulos (titulo, autor, fecha, url, texto_principal, tipo_fuente, puntaje_ird, conspiranoico_detectado, referencias_conteo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (titulo, autor, fecha, url, texto, tipo_fuente, puntaje_ird, conspiranoico_detectado, referencias_conteo))
+            registros_cargados += 1
+        except sqlite3.IntegrityError:
+            # Si la URL ya existe en la DB, no la duplica
+            pass
+
+    conn.commit()
     conn.close()
+    print(f"¡Se han cargado {registros_cargados} artículos nuevos desde {archivo_json}!")
 
 if __name__ == "__main__":
     inicializar_db()
-    cargar_datos_desde_csv()
+    # Procesamos la Fuente 1 (MedlinePlus -> Oficial)
+    cargar_datos_desde_json("datos_raw.json", "Oficial")
+    # Procesamos la Fuente 2 (Menéame -> Blog/Foro)
+    cargar_datos_desde_json("datos_raw_meneame.json", "Blog")
