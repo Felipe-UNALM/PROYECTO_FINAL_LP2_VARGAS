@@ -1,6 +1,6 @@
 # 📊 Sistema de Monitoreo de Indicadores de Desinformación Científica
 
-Prototipo funcional desarrollado para la evaluación del **Taller 2** en el curso de **Lenguaje de Programación 2 (Semestre 2026-1)**. El sistema recopila contenido web relacionado con temas de salud y ciencia mediante técnicas de Web Scraping, procesa los textos mediante expresiones regulares (Regex) y calcula un **Índice de Riesgo de Desinformación (IRD)** automatizado, visualizando los resultados en un panel interactivo.
+Prototipo funcional desarrollado para la evaluación del **Taller 2** en el curso de **Lenguaje de Programación 2 (Semestre 2026-1)**. El sistema recopila contenido web relacionado con temas de salud y ciencia mediante técnicas de Web Scraping, procesa los textos mediante expresiones regulares (Regex) y calcula un **Índice de Riesgo de Desinformación (IRD)** automatizado, visualizando los resultados en un panel interactivo conectado a una base de datos relacional.
 
 ---
 
@@ -22,6 +22,7 @@ Prototipo funcional desarrollado para la evaluación del **Taller 2** en el curs
 * **Análisis Textual:** Expresiones Regulares (Librería nativa `re`)
 * **Base de Datos:** SQLite3 (Persistencia local relacional)
 * **Dashboard:** Streamlit (Interfaz de usuario interactiva)
+* **Visualización:** Plotly Express & Matplotlib
 * **Control de Versiones:** Git & GitHub
 
 ---
@@ -30,8 +31,14 @@ Prototipo funcional desarrollado para la evaluación del **Taller 2** en el curs
 
 ```text
 📦 PROYECTO_FINAL_LP2_VARGAS
- ┣ 📜 app.py                   # Código principal de la interfaz en Streamlit
- ┣ 📜 database.py              # Script de creación e integración de la Base de Datos SQLite
- ┣ 📜 desinformacion.db        # Archivo de base de datos relacional (Generado automáticamente)
- ┣ 📜 requerimientos.txt       # Listado de librerías y dependencias del proyecto
- ┗ 📜 resultados_simulados.csv # Datos estructurados base para la simulación del pipeline
+ ┣ 📜 app.py                  # Código principal del Dashboard interactivo en Streamlit
+ ┣ 📜 database.py              # Script de arquitectura de datos unificada e inyección a SQLite
+ ┣ 📜 monitor_desinformacion.db # Base de datos relacional SQLite (Persistencia estructurada)
+ ┣ 📜 limpieza.py             # Funciones de limpieza de cadenas de texto
+ ┣ 📜 regex_patterns.py        # Diccionario de patrones y expresiones regulares
+ ┣ 📜 robots_checker.py        # Validador de permisos de acceso web (robots.txt)
+ ┣ 📜 score_ird.py             # Algoritmo matemático del Índice de Riesgo de Desinformación
+ ┣ 📜 scraper_fuente1.py       # Extractor automatizado para MedlinePlus
+ ┣ 📜 scraper_fuente2.py       # Extractor automatizado para Menéame
+ ┗ 📜 requerimientos.txt       # Listado estandarizado de dependencias del proyecto
+```
